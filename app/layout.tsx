@@ -2,7 +2,7 @@ import { getLocaleOnServer } from '@/i18n/server'
 
 import './styles/globals.css'
 import './styles/markdown.scss'
-
+import "../utils/getId";
 const LocaleLayout = ({
   children,
 }: {
