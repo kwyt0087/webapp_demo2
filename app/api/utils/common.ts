@@ -1,16 +1,13 @@
 import { type NextRequest } from 'next/server'
 import { CompletionClient } from 'dify-client'
 import { v4 } from 'uuid'
-import { API_KEY, APP_ID } from "@/utils/getId";
 import { API_URL } from '@/config'
-console.log('====================================');
-// console.log(APP_ID, 'APP_ID333');
-console.log('====================================');
-const userPrefix = `user_${APP_ID}:`
 
-export const getInfo = (request: NextRequest) => {
+const userPrefix = (difyId: string) => `user_${difyId}:`
+
+export const getInfo = (request: NextRequest, difyId: string) => {
   const sessionId = request.cookies.get('session_id')?.value || v4()
-  const user = userPrefix + sessionId
+  const user = userPrefix(difyId) + sessionId
   return {
     sessionId,
     user,
@@ -21,4 +18,9 @@ export const setSession = (sessionId: string) => {
   return { 'Set-Cookie': `session_id=${sessionId}` }
 }
 
-export const client = new CompletionClient(API_KEY, API_URL || undefined)
+export function handleDifyCredentials(difyId: string, difyCode: string) {
+  console.log('Handling Dify Credentials:', difyId, difyCode)
+
+  const client = new CompletionClient(difyCode, API_URL || undefined)
+  // 其他需要使用 difyId 和 difyCode 的操作
+}

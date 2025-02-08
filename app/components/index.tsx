@@ -20,13 +20,10 @@ import { Resolution, TransferMethod } from '@/types/app'
 import { changeLanguage } from '@/i18n/i18next-config'
 import Loading from '@/app/components/base/loading'
 import AppUnavailable from '@/app/components/app-unavailable'
-import { API_KEY, APP_ID } from "@/utils/getId";
 import { APP_INFO, DEFAULT_VALUE_MAX_LEN, IS_WORKFLOW } from '@/config'
 import { userInputsFormToPromptVariables } from '@/utils/prompt'
-console.log('====================================');
-// console.log(APP_ID, 'APP_ID222');
-console.log('====================================');
-
+// import { useRouter } from 'next/router'
+import { useSearchParams } from 'next/navigation'
 const GROUP_SIZE = 5 // to avoid RPM(Request per minute) limit. The group task finished then the next group.
 enum TaskStatus {
   pending = 'pending',
@@ -47,7 +44,8 @@ type Task = {
 
 const TextGeneration = () => {
   const { t } = useTranslation()
-
+  // const router = useRouter()
+  const searchParams = useSearchParams(); // 使用 useSearchParams hook
   const media = useBreakpoints()
   const isPC = media === MediaType.pc
   const isTablet = media === MediaType.tablet
@@ -61,7 +59,7 @@ const TextGeneration = () => {
   /*
   * app info
   */
-  const hasSetAppConfig = APP_ID && API_KEY
+  // const hasSetAppConfig = APP_ID && API_KEY
   const [appUnavailable, setAppUnavailable] = useState<boolean>(false)
   const [isUnknwonReason, setIsUnknwonReason] = useState<boolean>(false)
 
@@ -340,6 +338,36 @@ const TextGeneration = () => {
       })
     }
   }
+  const [hasSetAppConfig, setHasSetAppConfig] = useState(null)
+  useEffect(() => {
+    const fetchAppCredentials = async () => {
+      try {
+        const id = searchParams.get('id')
+        if (!id) return
+
+        const response = await fetch('/api/getAppCredentials', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id }),
+        })
+
+        const data = await response.json()
+        console.log('API response:', data)
+        if (data.success) {
+          setHasSetAppConfig(data.success)
+          setAppUnavailable(false)
+        }
+
+      } catch (error) {
+        console.error('Failed to fetch app credentials', error)
+        setAppUnavailable(true)
+      }
+    }
+
+    fetchAppCredentials()
+  }, [searchParams]) // 确保依赖项设置正确
 
   useEffect(() => {
     if (!hasSetAppConfig) {
@@ -372,7 +400,7 @@ const TextGeneration = () => {
         }
       }
     })()
-  }, [])
+  }, [hasSetAppConfig]) // 确保在 hasSetAppConfig 更新时重新运行
 
   useEffect(() => {
     if (APP_INFO?.title)
@@ -468,7 +496,7 @@ const TextGeneration = () => {
   )
 
   if (appUnavailable)
-    return <AppUnavailable isUnknwonReason={isUnknwonReason} errMessage={!hasSetAppConfig ? 'Please set APP_ID and API_KEY in config/index.tsx' : ''} />
+    return <AppUnavailable isUnknwonReason={isUnknwonReason} errMessage={!hasSetAppConfig ? '接口不通' : ''} />
 
   if (!APP_INFO || !promptConfig)
     return <Loading type='app' />
